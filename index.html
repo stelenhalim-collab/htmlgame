@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hamster Game</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            margin: 0;
+            padding: 20px;
+            font-family: Arial;
+            text-align: center;
+            color: white;
+        }
+        .hamster {
+            font-size: 100px;
+            cursor: pointer;
+            margin: 50px 0;
+        }
+        .stats {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐹 Hamster Clicker</h1>
+    
+    <div class="stats">
+        💰 Монеты: <span id="coins">0</span>
+    </div>
+    
+    <div class="hamster" onclick="clickHamster()">🐹</div>
+    
+    <button onclick="buyUpgrade()">💪 Улучшить (50💰)</button>
+
+    <script>
+        let coins = 0;
+        let power = 1;
+
+        function clickHamster() {
+            coins += power;
+            document.getElementById('coins').textContent = coins;
+        }
+
+        function buyUpgrade() {
+            if (coins >= 50) {
+                coins -= 50;
+                power += 1;
+                document.getElementById('coins').textContent = coins;
+                alert('Сила улучшена! 💪');
+            } else {
+                alert('Недостаточно монет! ❌');
+            }
+        }
+    </script>
+</body>
+</html>
