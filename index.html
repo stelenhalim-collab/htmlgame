@@ -2,66 +2,291 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Hamster Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamster Clicker</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea, #764ba2);
             margin: 0;
             padding: 20px;
-            font-family: Arial;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .header {
             text-align: center;
             color: white;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .game-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            margin-bottom: 20px;
         }
         .hamster {
             font-size: 100px;
             cursor: pointer;
-            margin: 50px 0;
+            margin: 20px 0;
+            transition: all 0.1s;
+            user-select: none;
+        }
+        .hamster:active {
+            transform: scale(0.95);
         }
         .stats {
-            font-size: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
             margin: 20px 0;
         }
-        button {
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-top: 5px;
+        }
+        .coins-display {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .upgrades {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .upgrade-btn {
             background: #4CAF50;
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 18px;
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .upgrade-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .upgrade-btn.auto {
+            background: #2196F3;
+        }
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px;
             border-radius: 10px;
             cursor: pointer;
+            margin-top: 10px;
+        }
+        .save-indicator {
+            color: #28a745;
+            font-size: 12px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>🐹 Hamster Clicker</h1>
-    
-    <div class="stats">
-        💰 Монеты: <span id="coins">0</span>
+    <div class="container">
+        <div class="header">
+            <h1>🐹 Hamster Clicker</h1>
+            <p>Тапай по хомяку и зарабатывай монеты!</p>
+        </div>
+        
+        <div class="game-card">
+            <div class="coins-display">
+                💰 <span id="coins">0</span> монет
+            </div>
+            
+            <div class="hamster" onclick="clickHamster()">
+                🐹
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    💪 Сила<br>
+                    <span class="stat-value" id="power">1</span>
+                </div>
+                <div class="stat-item">
+                    🤖 Авто<br>
+                    <span class="stat-value" id="auto">0</span>
+                </div>
+            </div>
+            
+            <div class="upgrades">
+                <button class="upgrade-btn" onclick="buyUpgrade('power')" id="powerBtn">
+                    💪 Улучшить силу<br>
+                    <small>50 монет</small>
+                </button>
+                <button class="upgrade-btn auto" onclick="buyUpgrade('auto')" id="autoBtn">
+                    🤖 Авто-кликер<br>
+                    <small>100 монет</small>
+                </button>
+            </div>
+
+            <div class="save-indicator" id="saveIndicator">
+                ✅ Прогресс сохранен
+            </div>
+            
+            <button class="reset-btn" onclick="resetGame()">
+                🔄 Сбросить игру
+            </button>
+        </div>
     </div>
-    
-    <div class="hamster" onclick="clickHamster()">🐹</div>
-    
-    <button onclick="buyUpgrade()">💪 Улучшить (50💰)</button>
 
     <script>
-        let coins = 0;
-        let power = 1;
-
-        function clickHamster() {
-            coins += power;
-            document.getElementById('coins').textContent = coins;
-        }
-
-        function buyUpgrade() {
-            if (coins >= 50) {
-                coins -= 50;
-                power += 1;
-                document.getElementById('coins').textContent = coins;
-                alert('Сила улучшена! 💪');
-            } else {
-                alert('Недостаточно монет! ❌');
+        // Функция для безопасного сохранения и загрузки
+        function saveGameData() {
+            try {
+                localStorage.setItem('hamsterGame', JSON.stringify(game));
+                console.log('Игра сохранена:', game);
+                showSaveIndicator();
+                return true;
+            } catch (e) {
+                console.error('Ошибка сохранения:', e);
+                return false;
             }
         }
+
+        function loadGameData() {
+            try {
+                const saved = localStorage.getItem('hamsterGame');
+                if (saved) {
+                    const loaded = JSON.parse(saved);
+                    console.log('Игра загружена:', loaded);
+                    return loaded;
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки:', e);
+            }
+            return null;
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.style.display = 'block';
+            indicator.textContent = '✅ Прогресс сохранен';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        }
+
+        // Инициализация игры
+        let game = {
+            coins: 0,
+            power: 1,
+            auto: 0,
+            totalClicks: 0
+        };
+
+        let autoInterval;
+
+        // Загружаем сохраненную игру при запуске
+        const savedGame = loadGameData();
+        if (savedGame) {
+            game = { ...game, ...savedGame };
+        }
+
+        function clickHamster() {
+            game.coins += game.power;
+            game.totalClicks++;
+            updateGame();
+            saveGameData();
+        }
+
+        function buyUpgrade(type) {
+            if (type === 'power' && game.coins >= 50) {
+                game.coins -= 50;
+                game.power += 1;
+            } else if (type === 'auto' && game.coins >= 100) {
+                game.coins -= 100;
+                game.auto += 1;
+                startAutoClick();
+            }
+            updateGame();
+            saveGameData();
+        }
+
+        function startAutoClick() {
+            if (autoInterval) clearInterval(autoInterval);
+            autoInterval = setInterval(() => {
+                if (game.auto > 0) {
+                    game.coins += game.auto;
+                    updateGame();
+                    saveGameData();
+                }
+            }, 1000);
+        }
+
+        function resetGame() {
+            if (confirm('Точно сбросить весь прогресс?')) {
+                game = { coins: 0, power: 1, auto: 0, totalClicks: 0 };
+                localStorage.removeItem('hamsterGame');
+                updateGame();
+                showSaveIndicator();
+                document.getElementById('saveIndicator').textContent = '🔄 Игра сброшена';
+            }
+        }
+
+        function updateGame() {
+            // Обновляем отображение
+            document.getElementById('coins').textContent = game.coins;
+            document.getElementById('power').textContent = game.power;
+            document.getElementById('auto').textContent = game.auto;
+            
+            // Обновляем кнопки
+            document.getElementById('powerBtn').disabled = game.coins < 50;
+            document.getElementById('autoBtn').disabled = game.coins < 100;
+        }
+
+        // Инициализация игры
+        if (game.auto > 0) {
+            startAutoClick();
+        }
+        updateGame();
+
+        // Скрываем индикатор сохранения при запуске
+        document.getElementById('saveIndicator').style.display = 'none';
+
+        // Интеграция с Telegram Web App
+        if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+        }
+
+        // Авто-сохранение каждые 30 секунд
+        setInterval(() => {
+            saveGameData();
+        }, 30000);
+
+        console.log('Игра инициализирована:', game);
     </script>
 </body>
 </html>
